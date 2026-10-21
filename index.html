@@ -1,149 +1,278 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Pakistan Restaurant Tycoon</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-  body { background: #2c3e50; color: white; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-  
-  /* Top HUD */
-  #top-hud { background: #34495e; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #f1c40f; z-index: 10; }
-  .hud-item { display: flex; align-items: center; gap: 6px; font-weight: bold; font-size: 13px; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 15px; }
-  .star-badge { background: #f1c40f; color: #000; padding: 2px 6px; border-radius: 8px; font-size: 11px; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Pakistan Restaurant Tycoon 3D</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a24; color: #fff; overflow: hidden; }
+    #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+    
+    /* Top HUD */
+    .hud-top {
+      position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 12px; background: rgba(20, 20, 30, 0.85);
+      padding: 8px 16px; border-radius: 30px; border: 2px solid #3d3d5c;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 10;
+    }
+    .hud-card { display: flex; align-items: center; gap: 6px; font-weight: bold; font-size: 14px; }
+    .hud-card.star { color: #f1c40f; }
+    .hud-card.item { color: #e67e22; }
+    .hud-card.money { color: #2ecc71; }
+    
+    /* Bottom Controls / Upgrade Menu */
+    .btn-upgrade {
+      position: absolute; bottom: 20px; right: 20px;
+      background: linear-gradient(135deg, #2980b9, #3498db);
+      color: white; border: none; padding: 14px 24px; border-radius: 50px;
+      font-size: 16px; font-weight: bold; cursor: pointer;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4); z-index: 10; transition: transform 0.2s;
+    }
+    .btn-upgrade:active { transform: scale(0.95); }
 
-  /* Main Game Area */
-  #game-container { flex: 1; position: relative; background: #e67e22; overflow: hidden; }
-  canvas { width: 100%; height: 100%; display: block; }
-
-  /* Bottom Control Panel */
-  #bottom-hud { background: #34495e; padding: 10px; display: flex; justify-content: space-around; align-items: center; border-top: 3px solid #2c3e50; z-index: 10; }
-  .btn-action { background: #8e44ad; color: white; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; font-size: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .btn-boost { background: #f39c12; }
-
-  /* Upgrade Popup Menu (Like Video) */
-  #upgrade-menu { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 380px; background: white; color: #333; border-radius: 16px; padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: none; z-index: 20; border: 3px solid #3498db; }
-  .menu-title { font-weight: bold; font-size: 16px; color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; display: flex; justify-content: space-between; }
-  .upgrade-row { background: #f9f9f9; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #ddd; }
-  .btn-upgrade-item { background: #2ecc71; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; }
-  
-  /* Floating Cash */
-  .floating-cash { position: absolute; color: #2ecc71; font-weight: bold; font-size: 16px; pointer-events: none; animation: floatUp 1s ease-out forwards; text-shadow: 1px 1px 2px #000; }
-  @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-35px); } }
-</style>
+    /* Modal Popup */
+    .modal-overlay {
+      position: absolute; top:0; left:0; width:100vw; height:100vh;
+      background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 100;
+    }
+    .modal-card {
+      background: #252538; width: 90%; max-width: 380px; border-radius: 20px;
+      padding: 20px; border: 2px solid #444466; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .modal-header h2 { font-size: 18px; color: #f39c12; }
+    .close-btn { background: #e74c3c; border:none; color:white; width:28px; height:28px; border-radius:50%; font-weight:bold; cursor:pointer; }
+    .upgrade-list { display: flex; flex-direction: column; gap: 12px; }
+    .up-item { display: flex; justify-content: space-between; align-items: center; background: #1f1f2e; padding: 12px; border-radius: 12px; }
+    .up-info h4 { font-size: 14px; color: #ecf0f1; }
+    .up-info p { font-size: 11px; color: #7f8c8d; }
+    .up-btn { background: #27ae60; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-  <!-- Top HUD (Like Video) -->
-  <div id="top-hud">
-    <div class="hud-item"><span class="star-badge">⭐ 148</span> <span id="lvl-txt">lvl 25</span></div>
-    <div class="hud-item">☕ <span id="coffee-count">734</span></div>
-    <div class="hud-item">💵 $<span id="cash-balance">16.2M</span></div>
+  <!-- Top HUD -->
+  <div class="hud-top">
+    <div class="hud-card star">⭐ Lvl <span id="level-txt">25</span></div>
+    <div class="hud-card item">☕ <span id="item-txt">770</span></div>
+    <div class="hud-card money">💵 $<span id="money-txt">17.7M</span></div>
   </div>
 
-  <!-- Game Floor Canvas Area -->
-  <div id="game-container">
-    <canvas id="gameCanvas"></canvas>
+  <!-- Bottom Action Button -->
+  <button class="btn-upgrade" onclick="toggleModal(true)">⚡ Upgrades</button>
 
-    <!-- Upgrade Popup Panel -->
-    <div id="upgrade-menu">
-      <div class="menu-title">
-        <span>Level 25 - Coffee Shop Upgrades</span>
-        <button onclick="closeMenu()" style="background:none;border:none;font-size:16px;cursor:pointer;">✕</button>
+  <!-- Modal -->
+  <div class="modal-overlay" id="up-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Restaurant Upgrades</h2>
+        <button class="close-btn" onclick="toggleModal(false)">✕</button>
       </div>
-      <div class="upgrade-row">
-        <div><b>Tray Size</b><br><small>More items in tray</small></div>
-        <button class="btn-upgrade-item" onclick="upgradeItem()">878K</button>
-      </div>
-      <div class="upgrade-row">
-        <div><b>Coffee Speed</b><br><small>Faster brewing</small></div>
-        <button class="btn-upgrade-item" onclick="upgradeItem()">1.9M</button>
+      <div class="upgrade-list">
+        <div class="up-item">
+          <div class="up-info">
+            <h4>Chef Cooking Speed</h4>
+            <p>Prepare items faster</p>
+          </div>
+          <button class="up-btn" onclick="buyUpgrade(100000)">$100K</button>
+        </div>
+        <div class="up-item">
+          <div class="up-info">
+            <h4>Add New 3D Table</h4>
+            <p>More seating space</p>
+          </div>
+          <button class="up-btn" onclick="addTable()">$250K</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Bottom HUD Panel -->
-  <div id="bottom-hud">
-    <button class="btn-action" onclick="alert('Map & Locations')">📍 Map</button>
-    <button class="btn-action btn-boost" onclick="alert('Income x2.3 Boost Active!')">⚡ x2.3 Income</button>
-    <button class="btn-action" onclick="openMenu()">🛠️ Upgrades</button>
-  </div>
+  <div id="canvas-container"></div>
 
-<script>
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
+  <script>
+    // 3D Scene setup
+    let scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xd7ccc8); // Warm restaurant floor background
 
-  let cash = 16200000;
-  let scoreCoffee = 734;
+    let camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 18, 16);
+    camera.lookAt(0, 0, 0);
 
-  function resize() {
-    canvas.width = canvas.parentElement.clientWidth;
-    canvas.height = canvas.parentElement.clientHeight;
-  }
-  window.addEventListener('resize', resize);
-  resize();
+    let renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-  function drawGame() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Lighting
+    let ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
 
-    // Wooden Floor Background
-    ctx.fillStyle = "#d35400";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    let dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    dirLight.position.set(10, 20, 10);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
 
-    // Draw Dining Tables (Top Area)
-    ctx.fillStyle = "#34495e";
-    for(let i=0; i<3; i++) {
-      ctx.fillRect(40 + (i * 110), 50, 80, 50);
-      ctx.fillStyle = "#fff";
-      ctx.font = "10px sans-serif";
-      ctx.fillText("🍽️ Table", 55 + (i * 110), 78);
-      ctx.fillStyle = "#34495e";
+    // Floor (Wooden floor look)
+    let floorGeo = new THREE.PlaneGeometry(16, 22);
+    let floorMat = new THREE.MeshStandardMaterial({ color: 0xd7a15c, roughness: 0.4 });
+    let floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // Walls
+    let wallMat = new THREE.MeshStandardMaterial({ color: 0x5d4037 });
+    let backWall = new THREE.Mesh(new THREE.BoxGeometry(16, 4, 0.5), wallMat);
+    backWall.position.set(0, 2, -11);
+    scene.add(backWall);
+
+    // Counters & Kitchen Area
+    let kitchenGeo = new THREE.BoxGeometry(12, 1.2, 2.5);
+    let kitchenMat = new THREE.MeshStandardMaterial({ color: 0x3e2723 });
+    let kitchen = new THREE.Mesh(kitchenGeo, kitchenMat);
+    kitchen.position.set(0, 0.6, -8);
+    scene.add(kitchen);
+
+    // Cooking Stoves / Items on Kitchen
+    for(let i = -4; i <= 4; i += 2) {
+      let stove = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.2, 1.2), new THREE.MeshStandardMaterial({ color: 0x212121 }));
+      stove.position.set(i, 1.3, -8);
+      scene.add(stove);
     }
 
-    // Counter Bar (Middle Area)
-    ctx.fillStyle = "#1abc9c";
-    ctx.fillRect(30, 200, canvas.width - 60, 70);
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 14px sans-serif";
-    ctx.fillText("🟢 Coffee & Burger Counter", 50, 240);
+    // Chefs (3D Characters)
+    let chefs = [];
+    function createChef(x, z) {
+      let chefGroup = new THREE.Group();
+      let bodyGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.2);
+      let bodyMat = new THREE.MeshStandardMaterial({ color: 0x2980b9 }); // Blue shirt
+      let body = new THREE.Mesh(bodyGeo, bodyMat);
+      body.position.y = 0.6;
 
-    // Locked Slots (Bottom Area - Like Video)
-    ctx.fillStyle = "#7f8c8d";
-    ctx.fillRect(50, 320, 100, 60);
-    ctx.fillStyle = "#fff";
-    ctx.fillText("🔒 2000$", 70, 355);
+      let headGeo = new THREE.SphereGeometry(0.3);
+      let headMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+      let head = new THREE.Mesh(headGeo, headMat);
+      head.position.y = 1.4;
 
-    ctx.fillStyle = "#7f8c8d";
-    ctx.fillRect(170, 320, 100, 60);
-    ctx.fillStyle = "#fff";
-    ctx.fillText("🔒 5000$", 190, 355);
+      let hatGeo = new THREE.CylinderGeometry(0.35, 0.3, 0.4);
+      let hatMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+      let hat = new THREE.Mesh(hatGeo, hatMat);
+      hat.position.y = 1.8;
 
-    requestAnimationFrame(drawGame);
-  }
+      chefGroup.add(body, head, hat);
+      chefGroup.position.set(x, 0, z);
+      scene.add(chefGroup);
+      chefs.push(chefGroup);
+    }
+    createChef(-3, -9.2);
+    createChef(0, -9.2);
+    createChef(3, -9.2);
 
-  function openMenu() {
-    document.getElementById('upgrade-menu').style.display = 'block';
-  }
+    // Dining Tables & Chairs
+    let tables = [];
+    function createTable(x, z) {
+      let tableGroup = new THREE.Group();
+      
+      // Table top (White/Blue look)
+      let topGeo = new THREE.BoxGeometry(2.2, 0.1, 2.2);
+      let topMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+      let top = new THREE.Mesh(topGeo, topMat);
+      top.position.y = 1;
 
-  function closeMenu() {
-    document.getElementById('upgrade-menu').style.display = 'none';
-  }
+      let legGeo = new THREE.CylinderGeometry(0.1, 0.1, 1);
+      let legMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+      let leg = new THREE.Mesh(legGeo, legMat);
+      leg.position.y = 0.5;
 
-  function upgradeItem() {
-    cash += 500000;
-    scoreCoffee += 12;
-    document.getElementById('cash-balance').innerText = (cash / 1000000).toFixed(1) + 'M';
-    document.getElementById('coffee-count').innerText = scoreCoffee;
-    alert("Upgrade Successful! Profit Increased.");
-    closeMenu();
-  }
+      tableGroup.add(top, leg);
 
-  canvas.addEventListener('click', function(e) {
-    openMenu();
-  });
+      // Chairs
+      let chairMat = new THREE.MeshStandardMaterial({ color: 0x2980b9 });
+      for(let side of [-1.4, 1.4]) {
+        let chair = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), chairMat);
+        chair.position.set(side, 0.3, 0);
+        tableGroup.add(chair);
+      }
 
-  drawGame();
-</script>
+      tableGroup.position.set(x, 0, z);
+      scene.add(tableGroup);
+      tables.push(tableGroup);
+    }
+
+    // Default Tables layout
+    createTable(-4, -4);
+    createTable(4, -4);
+    createTable(-4, 2);
+    createTable(4, 2);
+
+    // Customers (Moving Characters)
+    let customers = [];
+    function createCustomer() {
+      let custGroup = new THREE.Group();
+      let body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.1), new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff }));
+      body.position.y = 0.55;
+      let head = new THREE.Mesh(new THREE.SphereGeometry(0.28), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
+      head.position.y = 1.3;
+      custGroup.add(body, head);
+      
+      custGroup.position.set((Math.random() - 0.5) * 8, 0, 9);
+      scene.add(custGroup);
+      customers.push({ mesh: custGroup, speed: 0.03 + Math.random() * 0.02, targetZ: -2 + Math.random() * 4 });
+    }
+
+    // Spawn 5 customers
+    for(let i = 0; i < 5; i++) createCustomer();
+
+    // UI & Logic
+    let money = 17.7;
+    function updateUI() {
+      document.getElementById('money-txt').innerText = money.toFixed(1) + "M";
+    }
+
+    function addTable() {
+      if(tables.length < 8) {
+        let zPos = tables.length % 2 === 0 ? 6 : 6;
+        let xPos = tables.length % 2 === 0 ? -4 : 4;
+        createTable(xPos, zPos);
+        money -= 0.25;
+        updateUI();
+        toggleModal(false);
+      }
+    }
+
+    function toggleModal(show) {
+      document.getElementById('up-modal').style.display = show ? 'flex' : 'none';
+    }
+
+    // Animation Loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Customer Movement
+      customers.forEach(c => {
+        if(c.mesh.position.z > c.targetZ) {
+          c.mesh.position.z -= c.speed;
+        }
+      });
+
+      // Subtle Chef Animation
+      chefs.forEach((chef, idx) => {
+        chef.rotation.y = Math.sin(Date.now() * 0.003 + idx) * 0.2;
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // Window Resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
 </body>
 </html>
