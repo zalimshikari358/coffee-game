@@ -1,278 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Pakistan Restaurant Tycoon 3D</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a24; color: #fff; overflow: hidden; }
-    #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
-    
-    /* Top HUD */
-    .hud-top {
-      position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 12px; background: rgba(20, 20, 30, 0.85);
-      padding: 8px 16px; border-radius: 30px; border: 2px solid #3d3d5c;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 10;
-    }
-    .hud-card { display: flex; align-items: center; gap: 6px; font-weight: bold; font-size: 14px; }
-    .hud-card.star { color: #f1c40f; }
-    .hud-card.item { color: #e67e22; }
-    .hud-card.money { color: #2ecc71; }
-    
-    /* Bottom Controls / Upgrade Menu */
-    .btn-upgrade {
-      position: absolute; bottom: 20px; right: 20px;
-      background: linear-gradient(135deg, #2980b9, #3498db);
-      color: white; border: none; padding: 14px 24px; border-radius: 50px;
-      font-size: 16px; font-weight: bold; cursor: pointer;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.4); z-index: 10; transition: transform 0.2s;
-    }
-    .btn-upgrade:active { transform: scale(0.95); }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Idle Miner Tycoon Clone</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body { background: #1a1a2e; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
+        #game-header { background: #0f3460; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #e94560; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 10; }
+        .stat-box { background: rgba(0,0,0,0.4); padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 16px; border: 1px solid #e94560; display: flex; align-items: center; gap: 8px; }
+        
+        #view-toggle { background: #e94560; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        #view-toggle:active { transform: scale(0.95); }
 
-    /* Modal Popup */
-    .modal-overlay {
-      position: absolute; top:0; left:0; width:100vw; height:100vh;
-      background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 100;
-    }
-    .modal-card {
-      background: #252538; width: 90%; max-width: 380px; border-radius: 20px;
-      padding: 20px; border: 2px solid #444466; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-    }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .modal-header h2 { font-size: 18px; color: #f39c12; }
-    .close-btn { background: #e74c3c; border:none; color:white; width:28px; height:28px; border-radius:50%; font-weight:bold; cursor:pointer; }
-    .upgrade-list { display: flex; flex-direction: column; gap: 12px; }
-    .up-item { display: flex; justify-content: space-between; align-items: center; background: #1f1f2e; padding: 12px; border-radius: 12px; }
-    .up-info h4 { font-size: 14px; color: #ecf0f1; }
-    .up-info p { font-size: 11px; color: #7f8c8d; }
-    .up-btn { background: #27ae60; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        #main-viewport { flex: 1; position: relative; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* Map Screen Overlay */
+        #map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 5; }
+        .map-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 20px; width: 100%; max-width: 400px; }
+        .island-card { background: #1e293b; border: 2px solid #38bdf8; border-radius: 15px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .island-card:hover { transform: translateY(-5px); background: #334155; }
+        .island-card.locked { opacity: 0.5; border-color: #64748b; cursor: not-allowed; }
+
+        /* Control Panel at Bottom */
+        #controls-panel { background: #0f3460; padding: 12px; display: flex; gap: 10px; overflow-x: auto; z-index: 10; border-top: 2px solid #e94560; }
+        .btn-upgrade { background: #10b981; color: white; border: none; padding: 10px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; flex: 1; min-width: 110px; text-align: center; font-size: 13px; }
+        .btn-upgrade:disabled { background: #4b5563; cursor: not-allowed; }
+    </style>
 </head>
 <body>
 
-  <!-- Top HUD -->
-  <div class="hud-top">
-    <div class="hud-card star">⭐ Lvl <span id="level-txt">25</span></div>
-    <div class="hud-card item">☕ <span id="item-txt">770</span></div>
-    <div class="hud-card money">💵 $<span id="money-txt">17.7M</span></div>
-  </div>
-
-  <!-- Bottom Action Button -->
-  <button class="btn-upgrade" onclick="toggleModal(true)">⚡ Upgrades</button>
-
-  <!-- Modal -->
-  <div class="modal-overlay" id="up-modal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2>Restaurant Upgrades</h2>
-        <button class="close-btn" onclick="toggleModal(false)">✕</button>
-      </div>
-      <div class="upgrade-list">
-        <div class="up-item">
-          <div class="up-info">
-            <h4>Chef Cooking Speed</h4>
-            <p>Prepare items faster</p>
-          </div>
-          <button class="up-btn" onclick="buyUpgrade(100000)">$100K</button>
-        </div>
-        <div class="up-item">
-          <div class="up-info">
-            <h4>Add New 3D Table</h4>
-            <p>More seating space</p>
-          </div>
-          <button class="up-btn" onclick="addTable()">$250K</button>
-        </div>
-      </div>
+    <div id="game-header">
+        <div class="stat-box">💰 Cash: <span id="cash-txt">100</span></div>
+        <button id="view-toggle" onclick="toggleView()">🗺️ World Map</button>
     </div>
-  </div>
 
-  <div id="canvas-container"></div>
+    <div id="main-viewport">
+        <canvas id="gameCanvas"></canvas>
 
-  <script>
-    // 3D Scene setup
-    let scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xd7ccc8); // Warm restaurant floor background
+        <div id="map-overlay">
+            <h2 style="margin-bottom:20px; color:#38bdf8;">Select Mine Location</h2>
+            <div class="map-grid">
+                <div class="island-card" onclick="selectIsland('Grassland')">
+                    <h3>🌱 Starter Island</h3>
+                    <p style="color:#4ade80;">Active</p>
+                </div>
+                <div class="island-card locked">
+                    <h3>❄️ Ice Island</h3>
+                    <p style="color:#94a3b8;">Unlocks at $50k</p>
+                </div>
+                <div class="island-card locked">
+                    <h3>🔥 Volcanic Island</h3>
+                    <p style="color:#94a3b8;">Unlocks at $1M</p>
+                </div>
+                <div class="island-card locked">
+                    <h3>💎 Crystal Island</h3>
+                    <p style="color:#94a3b8;">Unlocks at $50M</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    let camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 18, 16);
-    camera.lookAt(0, 0, 0);
+    <div id="controls-panel">
+        <button class="btn-upgrade" id="up-shaft" onclick="upgradeShaft()">⛏️ Shaft Lvl <span id="shaft-lvl">1</span><br><small>$<span id="shaft-cost">50</span></small></button>
+        <button class="btn-upgrade" id="up-ele" onclick="upgradeElevator()">🛗 Elevator Lvl <span id="ele-lvl">1</span><br><small>$<span id="ele-cost">100</span></small></button>
+        <button class="btn-upgrade" id="up-ware" onclick="upgradeWarehouse()">🚚 Warehouse Lvl <span id="ware-lvl">1</span><br><small>$<span id="ware-cost">150</span></small></button>
+    </div>
 
-    let renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    document.getElementById('canvas-container').appendChild(renderer.domElement);
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-    // Lighting
-    let ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambientLight);
-
-    let dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    dirLight.position.set(10, 20, 10);
-    dirLight.castShadow = true;
-    scene.add(dirLight);
-
-    // Floor (Wooden floor look)
-    let floorGeo = new THREE.PlaneGeometry(16, 22);
-    let floorMat = new THREE.MeshStandardMaterial({ color: 0xd7a15c, roughness: 0.4 });
-    let floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true;
-    scene.add(floor);
-
-    // Walls
-    let wallMat = new THREE.MeshStandardMaterial({ color: 0x5d4037 });
-    let backWall = new THREE.Mesh(new THREE.BoxGeometry(16, 4, 0.5), wallMat);
-    backWall.position.set(0, 2, -11);
-    scene.add(backWall);
-
-    // Counters & Kitchen Area
-    let kitchenGeo = new THREE.BoxGeometry(12, 1.2, 2.5);
-    let kitchenMat = new THREE.MeshStandardMaterial({ color: 0x3e2723 });
-    let kitchen = new THREE.Mesh(kitchenGeo, kitchenMat);
-    kitchen.position.set(0, 0.6, -8);
-    scene.add(kitchen);
-
-    // Cooking Stoves / Items on Kitchen
-    for(let i = -4; i <= 4; i += 2) {
-      let stove = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.2, 1.2), new THREE.MeshStandardMaterial({ color: 0x212121 }));
-      stove.position.set(i, 1.3, -8);
-      scene.add(stove);
+    function resize() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
     }
+    window.addEventListener('resize', resize);
+    resize();
 
-    // Chefs (3D Characters)
-    let chefs = [];
-    function createChef(x, z) {
-      let chefGroup = new THREE.Group();
-      let bodyGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.2);
-      let bodyMat = new THREE.MeshStandardMaterial({ color: 0x2980b9 }); // Blue shirt
-      let body = new THREE.Mesh(bodyGeo, bodyMat);
-      body.position.y = 0.6;
+    // Game State
+    let cash = 100;
+    let shaftLvl = 1;
+    let eleLvl = 1;
+    let wareLvl = 1;
+    let currentView = 'mine';
 
-      let headGeo = new THREE.SphereGeometry(0.3);
-      let headMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
-      let head = new THREE.Mesh(headGeo, headMat);
-      head.position.y = 1.4;
+    // Game Objects
+    let miner = { x: 100, dir: 1, progress: 0 };
+    let elevator = { y: 100, dir: 1, cargo: 0 };
+    let warehouseWorker = { x: 60, dir: 1, cargo: 0 };
+    let shaftStorage = 0;
+    let topStorage = 0;
 
-      let hatGeo = new THREE.CylinderGeometry(0.35, 0.3, 0.4);
-      let hatMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-      let hat = new THREE.Mesh(hatGeo, hatMat);
-      hat.position.y = 1.8;
-
-      chefGroup.add(body, head, hat);
-      chefGroup.position.set(x, 0, z);
-      scene.add(chefGroup);
-      chefs.push(chefGroup);
-    }
-    createChef(-3, -9.2);
-    createChef(0, -9.2);
-    createChef(3, -9.2);
-
-    // Dining Tables & Chairs
-    let tables = [];
-    function createTable(x, z) {
-      let tableGroup = new THREE.Group();
-      
-      // Table top (White/Blue look)
-      let topGeo = new THREE.BoxGeometry(2.2, 0.1, 2.2);
-      let topMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-      let top = new THREE.Mesh(topGeo, topMat);
-      top.position.y = 1;
-
-      let legGeo = new THREE.CylinderGeometry(0.1, 0.1, 1);
-      let legMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-      let leg = new THREE.Mesh(legGeo, legMat);
-      leg.position.y = 0.5;
-
-      tableGroup.add(top, leg);
-
-      // Chairs
-      let chairMat = new THREE.MeshStandardMaterial({ color: 0x2980b9 });
-      for(let side of [-1.4, 1.4]) {
-        let chair = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), chairMat);
-        chair.position.set(side, 0.3, 0);
-        tableGroup.add(chair);
-      }
-
-      tableGroup.position.set(x, 0, z);
-      scene.add(tableGroup);
-      tables.push(tableGroup);
-    }
-
-    // Default Tables layout
-    createTable(-4, -4);
-    createTable(4, -4);
-    createTable(-4, 2);
-    createTable(4, 2);
-
-    // Customers (Moving Characters)
-    let customers = [];
-    function createCustomer() {
-      let custGroup = new THREE.Group();
-      let body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.1), new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff }));
-      body.position.y = 0.55;
-      let head = new THREE.Mesh(new THREE.SphereGeometry(0.28), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
-      head.position.y = 1.3;
-      custGroup.add(body, head);
-      
-      custGroup.position.set((Math.random() - 0.5) * 8, 0, 9);
-      scene.add(custGroup);
-      customers.push({ mesh: custGroup, speed: 0.03 + Math.random() * 0.02, targetZ: -2 + Math.random() * 4 });
-    }
-
-    // Spawn 5 customers
-    for(let i = 0; i < 5; i++) createCustomer();
-
-    // UI & Logic
-    let money = 17.7;
-    function updateUI() {
-      document.getElementById('money-txt').innerText = money.toFixed(1) + "M";
-    }
-
-    function addTable() {
-      if(tables.length < 8) {
-        let zPos = tables.length % 2 === 0 ? 6 : 6;
-        let xPos = tables.length % 2 === 0 ? -4 : 4;
-        createTable(xPos, zPos);
-        money -= 0.25;
-        updateUI();
-        toggleModal(false);
-      }
-    }
-
-    function toggleModal(show) {
-      document.getElementById('up-modal').style.display = show ? 'flex' : 'none';
-    }
-
-    // Animation Loop
-    function animate() {
-      requestAnimationFrame(animate);
-
-      // Customer Movement
-      customers.forEach(c => {
-        if(c.mesh.position.z > c.targetZ) {
-          c.mesh.position.z -= c.speed;
+    function toggleView() {
+        const map = document.getElementById('map-overlay');
+        const btn = document.getElementById('view-toggle');
+        if (currentView === 'mine') {
+            currentView = 'map';
+            map.style.display = 'flex';
+            btn.innerText = '⛏️ Back to Mine';
+        } else {
+            currentView = 'mine';
+            map.style.display = 'none';
+            btn.innerText = '🗺️ World Map';
         }
-      });
-
-      // Subtle Chef Animation
-      chefs.forEach((chef, idx) => {
-        chef.rotation.y = Math.sin(Date.now() * 0.003 + idx) * 0.2;
-      });
-
-      renderer.render(scene, camera);
     }
 
-    animate();
+    function selectIsland(name) {
+        alert("Switched to " + name);
+        toggleView();
+    }
 
-    // Window Resize
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-  </script>
+    function upgradeShaft() {
+        let cost = Math.floor(50 * Math.pow(1.5, shaftLvl - 1));
+        if (cash >= cost) {
+            cash -= cost;
+            shaftLvl++;
+            updateUI();
+        }
+    }
+
+    function upgradeElevator() {
+        let cost = Math.floor(100 * Math.pow(1.5, eleLvl - 1));
+        if (cash >= cost) {
+            cash -= cost;
+            eleLvl++;
+            updateUI();
+        }
+    }
+
+    function upgradeWarehouse() {
+        let cost = Math.floor(150 * Math.pow(1.5, wareLvl - 1));
+        if (cash >= cost) {
+            cash -= cost;
+            wareLvl++;
+            updateUI();
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('cash-txt').innerText = Math.floor(cash);
+        document.getElementById('shaft-lvl').innerText = shaftLvl;
+        document.getElementById('shaft-cost').innerText = Math.floor(50 * Math.pow(1.5, shaftLvl - 1));
+        document.getElementById('ele-lvl').innerText = eleLvl;
+        document.getElementById('ele-cost').innerText = Math.floor(100 * Math.pow(1.5, eleLvl - 1));
+        document.getElementById('ware-lvl').innerText = wareLvl;
+        document.getElementById('ware-cost').innerText = Math.floor(150 * Math.pow(1.5, wareLvl - 1));
+    }
+
+    // Animation & Physics Loop
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (currentView === 'mine') {
+            // Background Sky & Earth
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(0, 0, canvas.width, 120); // Sky
+            
+            ctx.fillStyle = '#4ade80';
+            ctx.fillRect(0, 110, canvas.width, 15); // Grass
+            
+            ctx.fillStyle = '#451a03';
+            ctx.fillRect(0, 125, canvas.width, canvas.height - 125); // Underground Dirt
+
+            // Elevator Shaft Frame
+            ctx.fillStyle = '#27272a';
+            ctx.fillRect(30, 50, 25, canvas.height - 100);
+
+            // Shaft Tunnel 1
+            ctx.fillStyle = '#261005';
+            ctx.fillRect(55, 220, canvas.width - 55, 50);
+
+            // --- MINER LOGIC ---
+            miner.x += miner.dir * (1 + shaftLvl * 0.2);
+            if (miner.x > canvas.width - 60) {
+                miner.dir = -1;
+                shaftStorage += shaftLvl * 10;
+            }
+            if (miner.x < 65) {
+                miner.dir = 1;
+            }
+
+            // Draw Miner Character (Helmet + Body)
+            ctx.fillStyle = '#f59e0b'; // Yellow Helmet
+            ctx.beginPath(); ctx.arc(miner.x, 235, 8, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#3b82f6'; // Blue Shirt
+            ctx.fillRect(miner.x - 5, 243, 10, 12);
+
+            // --- ELEVATOR LOGIC ---
+            elevator.y += elevator.dir * (1 + eleLvl * 0.3);
+            if (elevator.y > 230) {
+                elevator.dir = -1;
+                let take = Math.min(shaftStorage, eleLvl * 20);
+                shaftStorage -= take;
+                elevator.cargo += take;
+            }
+            if (elevator.y < 80) {
+                elevator.dir = 1;
+                topStorage += elevator.cargo;
+                elevator.cargo = 0;
+            }
+
+            // Draw Elevator Basket
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(25, elevator.y, 35, 25);
+            if (elevator.cargo > 0) {
+                ctx.fillStyle = '#fbbf24'; // Gold inside
+                ctx.beginPath(); ctx.arc(42, elevator.y + 12, 5, 0, Math.PI * 2); ctx.fill();
+            }
+
+            // --- WAREHOUSE WORKER LOGIC ---
+            warehouseWorker.x += warehouseWorker.dir * (1 + wareLvl * 0.3);
+            if (warehouseWorker.x > 200) {
+                warehouseWorker.dir = -1;
+                if (warehouseWorker.cargo > 0) {
+                    cash += warehouseWorker.cargo;
+                    warehouseWorker.cargo = 0;
+                    updateUI();
+                }
+            }
+            if (warehouseWorker.x < 65) {
+                warehouseWorker.dir = 1;
+                let take = Math.min(topStorage, wareLvl * 25);
+                topStorage -= take;
+                warehouseWorker.cargo += take;
+            }
+
+            // Draw Warehouse Worker
+            ctx.fillStyle = '#10b981';
+            ctx.fillRect(warehouseWorker.x - 5, 95, 10, 15);
+
+            // Shaft Gold Display
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText('📦 ' + Math.floor(shaftStorage), 70, 210);
+            ctx.fillText('💰 Top: ' + Math.floor(topStorage), 70, 75);
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    updateUI();
+    gameLoop();
+</script>
 </body>
 </html>
