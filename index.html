@@ -3,70 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Idle Miner Tycoon Clone</title>
+    <title>Idle Miner Tycoon - Complete Edition</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background: #1a1a2e; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #0f172a; color: #fff; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+
+        /* Top Bar */
+        #game-header { background: #1e293b; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #3b82f6; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 10; }
+        .stat-group { display: flex; gap: 10px; }
+        .stat-box { background: rgba(0,0,0,0.4); padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; border: 1px solid #3b82f6; display: flex; align-items: center; gap: 6px; }
         
-        #game-header { background: #0f3460; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #e94560; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 10; }
-        .stat-box { background: rgba(0,0,0,0.4); padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 16px; border: 1px solid #e94560; display: flex; align-items: center; gap: 8px; }
-        
-        #view-toggle { background: #e94560; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        #view-toggle { background: #f59e0b; color: #000; border: none; padding: 8px 14px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         #view-toggle:active { transform: scale(0.95); }
 
-        #main-viewport { flex: 1; position: relative; overflow: hidden; }
+        /* Main Viewport & Canvas */
+        #main-viewport { flex: 1; position: relative; overflow: hidden; background: #38bdf8; }
         canvas { display: block; width: 100%; height: 100%; }
 
-        /* Map Screen Overlay */
-        #map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 5; }
-        .map-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 20px; width: 100%; max-width: 400px; }
-        .island-card { background: #1e293b; border: 2px solid #38bdf8; border-radius: 15px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; }
-        .island-card:hover { transform: translateY(-5px); background: #334155; }
-        .island-card.locked { opacity: 0.5; border-color: #64748b; cursor: not-allowed; }
+        /* World Map Screen Overlay */
+        #map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: none; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 30px; z-index: 5; overflow-y: auto; }
+        .map-grid { display: grid; grid-template-columns: 1fr; gap: 15px; padding: 15px; width: 100%; max-width: 400px; }
+        .island-card { background: #1e293b; border: 2px solid #38bdf8; border-radius: 15px; padding: 15px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .island-card:hover { transform: translateY(-3px); background: #334155; }
+        .island-card.locked { opacity: 0.6; border-color: #64748b; }
 
-        /* Control Panel at Bottom */
-        #controls-panel { background: #0f3460; padding: 12px; display: flex; gap: 10px; overflow-x: auto; z-index: 10; border-top: 2px solid #e94560; }
-        .btn-upgrade { background: #10b981; color: white; border: none; padding: 10px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; flex: 1; min-width: 110px; text-align: center; font-size: 13px; }
-        .btn-upgrade:disabled { background: #4b5563; cursor: not-allowed; }
+        /* Bottom Controls & Upgrades Panel */
+        #controls-panel { background: #1e293b; padding: 12px; display: flex; gap: 8px; overflow-x: auto; z-index: 10; border-top: 2px solid #3b82f6; }
+        .btn-upgrade { background: #10b981; color: white; border: none; padding: 10px 12px; border-radius: 10px; font-weight: bold; cursor: pointer; flex: 1; min-width: 105px; text-align: center; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .btn-upgrade:active { transform: scale(0.96); }
+        .btn-upgrade small { font-size: 10px; opacity: 0.9; }
     </style>
 </head>
 <body>
 
+    <!-- Header Stats -->
     <div id="game-header">
-        <div class="stat-box">💰 Cash: <span id="cash-txt">100</span></div>
+        <div class="stat-group">
+            <div class="stat-box">💰 <span id="cash-txt">150</span></div>
+            <div class="stat-box">💎 <span id="gem-txt">10</span></div>
+        </div>
         <button id="view-toggle" onclick="toggleView()">🗺️ World Map</button>
     </div>
 
+    <!-- Main Viewport -->
     <div id="main-viewport">
         <canvas id="gameCanvas"></canvas>
 
+        <!-- World Map Overlay (Islands / Elemental view like video) -->
         <div id="map-overlay">
-            <h2 style="margin-bottom:20px; color:#38bdf8;">Select Mine Location</h2>
+            <h2 style="margin-bottom:15px; color:#38bdf8;">🌍 Continents & Islands</h2>
             <div class="map-grid">
                 <div class="island-card" onclick="selectIsland('Grassland')">
-                    <h3>🌱 Starter Island</h3>
-                    <p style="color:#4ade80;">Active</p>
+                    <h3>🌱 Grassland Mine</h3>
+                    <p style="color:#4ade80; font-size:13px;">Status: Active</p>
                 </div>
-                <div class="island-card locked">
-                    <h3>❄️ Ice Island</h3>
-                    <p style="color:#94a3b8;">Unlocks at $50k</p>
+                <div class="island-card" onclick="selectIsland('Ice')">
+                    <h3>❄️ Ice Continent</h3>
+                    <p style="color:#38bdf8; font-size:13px;">Multiplier: x2.5 Cash</p>
                 </div>
-                <div class="island-card locked">
+                <div class="island-card" onclick="selectIsland('Fire')">
                     <h3>🔥 Volcanic Island</h3>
-                    <p style="color:#94a3b8;">Unlocks at $1M</p>
-                </div>
-                <div class="island-card locked">
-                    <h3>💎 Crystal Island</h3>
-                    <p style="color:#94a3b8;">Unlocks at $50M</p>
+                    <p style="color:#f59e0b; font-size:13px;">Multiplier: x5.0 Cash</p>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Bottom Management Panel -->
     <div id="controls-panel">
-        <button class="btn-upgrade" id="up-shaft" onclick="upgradeShaft()">⛏️ Shaft Lvl <span id="shaft-lvl">1</span><br><small>$<span id="shaft-cost">50</span></small></button>
-        <button class="btn-upgrade" id="up-ele" onclick="upgradeElevator()">🛗 Elevator Lvl <span id="ele-lvl">1</span><br><small>$<span id="ele-cost">100</span></small></button>
-        <button class="btn-upgrade" id="up-ware" onclick="upgradeWarehouse()">🚚 Warehouse Lvl <span id="ware-lvl">1</span><br><small>$<span id="ware-cost">150</span></small></button>
+        <button class="btn-upgrade" onclick="upgradeShaft()">⛏️ Shaft Lvl <span id="shaft-lvl">1</span><br><small>$<span id="shaft-cost">50</span></small></button>
+        <button class="btn-upgrade" onclick="upgradeElevator()">🛗 Elevator Lvl <span id="ele-lvl">1</span><br><small>$<span id="ele-cost">100</span></small></button>
+        <button class="btn-upgrade" onclick="upgradeWarehouse()">🚚 Warehouse Lvl <span id="ware-lvl">1</span><br><small>$<span id="ware-cost">150</span></small></button>
     </div>
 
 <script>
@@ -80,19 +87,20 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // Game State
-    let cash = 100;
+    // Game Economy & State
+    let cash = 150;
+    let gems = 10;
     let shaftLvl = 1;
     let eleLvl = 1;
     let wareLvl = 1;
     let currentView = 'mine';
 
-    // Game Objects
-    let miner = { x: 100, dir: 1, progress: 0 };
-    let elevator = { y: 100, dir: 1, cargo: 0 };
-    let warehouseWorker = { x: 60, dir: 1, cargo: 0 };
+    // Simulation Entities
+    let miner = { x: 80, dir: 1 };
+    let elevator = { y: 120, dir: 1, cargo: 0 };
+    let warehouseWorker = { x: 50, dir: 1, cargo: 0 };
     let shaftStorage = 0;
-    let topStorage = 0;
+    let surfaceStorage = 0;
 
     function toggleView() {
         const map = document.getElementById('map-overlay');
@@ -109,12 +117,12 @@
     }
 
     function selectIsland(name) {
-        alert("Switched to " + name);
+        alert("Switched to " + name + " Mine!");
         toggleView();
     }
 
     function upgradeShaft() {
-        let cost = Math.floor(50 * Math.pow(1.5, shaftLvl - 1));
+        let cost = Math.floor(50 * Math.pow(1.4, shaftLvl - 1));
         if (cash >= cost) {
             cash -= cost;
             shaftLvl++;
@@ -123,7 +131,7 @@
     }
 
     function upgradeElevator() {
-        let cost = Math.floor(100 * Math.pow(1.5, eleLvl - 1));
+        let cost = Math.floor(100 * Math.pow(1.4, eleLvl - 1));
         if (cash >= cost) {
             cash -= cost;
             eleLvl++;
@@ -132,7 +140,7 @@
     }
 
     function upgradeWarehouse() {
-        let cost = Math.floor(150 * Math.pow(1.5, wareLvl - 1));
+        let cost = Math.floor(150 * Math.pow(1.4, wareLvl - 1));
         if (cash >= cost) {
             cash -= cost;
             wareLvl++;
@@ -142,101 +150,99 @@
 
     function updateUI() {
         document.getElementById('cash-txt').innerText = Math.floor(cash);
+        document.getElementById('gem-txt').innerText = gems;
         document.getElementById('shaft-lvl').innerText = shaftLvl;
-        document.getElementById('shaft-cost').innerText = Math.floor(50 * Math.pow(1.5, shaftLvl - 1));
+        document.getElementById('shaft-cost').innerText = Math.floor(50 * Math.pow(1.4, shaftLvl - 1));
         document.getElementById('ele-lvl').innerText = eleLvl;
-        document.getElementById('ele-cost').innerText = Math.floor(100 * Math.pow(1.5, eleLvl - 1));
+        document.getElementById('ele-cost').innerText = Math.floor(100 * Math.pow(1.4, eleLvl - 1));
         document.getElementById('ware-lvl').innerText = wareLvl;
-        document.getElementById('ware-cost').innerText = Math.floor(150 * Math.pow(1.5, wareLvl - 1));
+        document.getElementById('ware-cost').innerText = Math.floor(150 * Math.pow(1.4, wareLvl - 1));
     }
 
-    // Animation & Physics Loop
+    // Main Game Render & Physics Loop
     function gameLoop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         if (currentView === 'mine') {
-            // Background Sky & Earth
+            // 1. Sky & Surface Environment
             ctx.fillStyle = '#38bdf8';
-            ctx.fillRect(0, 0, canvas.width, 120); // Sky
+            ctx.fillRect(0, 0, canvas.width, 100); // Sky
             
-            ctx.fillStyle = '#4ade80';
-            ctx.fillRect(0, 110, canvas.width, 15); // Grass
-            
-            ctx.fillStyle = '#451a03';
-            ctx.fillRect(0, 125, canvas.width, canvas.height - 125); // Underground Dirt
+            ctx.fillStyle = '#22c55e';
+            ctx.fillRect(0, 90, canvas.width, 15); // Grass layer
 
-            // Elevator Shaft Frame
-            ctx.fillStyle = '#27272a';
-            ctx.fillRect(30, 50, 25, canvas.height - 100);
+            // 2. Underground Earth
+            ctx.fillStyle = '#331a00';
+            ctx.fillRect(0, 105, canvas.width, canvas.height - 105);
 
-            // Shaft Tunnel 1
-            ctx.fillStyle = '#261005';
-            ctx.fillRect(55, 220, canvas.width - 55, 50);
+            // Mine Shaft Tunnel
+            ctx.fillStyle = '#1c0f02';
+            ctx.fillRect(50, 240, canvas.width - 50, 50);
 
-            // --- MINER LOGIC ---
-            miner.x += miner.dir * (1 + shaftLvl * 0.2);
+            // Elevator Shaft Structure
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(25, 40, 25, canvas.height - 80);
+
+            // --- MINER MOVEMENT & LOGIC ---
+            miner.x += miner.dir * (1.2 + shaftLvl * 0.15);
             if (miner.x > canvas.width - 60) {
                 miner.dir = -1;
-                shaftStorage += shaftLvl * 10;
+                shaftStorage += shaftLvl * 8;
             }
-            if (miner.x < 65) {
+            if (miner.x < 60) {
                 miner.dir = 1;
             }
 
-            // Draw Miner Character (Helmet + Body)
-            ctx.fillStyle = '#f59e0b'; // Yellow Helmet
-            ctx.beginPath(); ctx.arc(miner.x, 235, 8, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#3b82f6'; // Blue Shirt
-            ctx.fillRect(miner.x - 5, 243, 10, 12);
+            // Draw Cartoon Miner Character
+            ctx.fillStyle = '#eab308'; // Helmet
+            ctx.beginPath(); ctx.arc(miner.x, 255, 7, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#ef4444'; // Shirt
+            ctx.fillRect(miner.x - 4, 262, 8, 12);
 
-            // --- ELEVATOR LOGIC ---
-            elevator.y += elevator.dir * (1 + eleLvl * 0.3);
-            if (elevator.y > 230) {
+            // --- ELEVATOR MOVEMENT & LOGIC ---
+            elevator.y += elevator.dir * (1.2 + eleLvl * 0.2);
+            if (elevator.y > 245) {
                 elevator.dir = -1;
-                let take = Math.min(shaftStorage, eleLvl * 20);
+                let take = Math.min(shaftStorage, eleLvl * 15);
                 shaftStorage -= take;
                 elevator.cargo += take;
             }
-            if (elevator.y < 80) {
+            if (elevator.y < 60) {
                 elevator.dir = 1;
-                topStorage += elevator.cargo;
+                surfaceStorage += elevator.cargo;
                 elevator.cargo = 0;
             }
 
-            // Draw Elevator Basket
-            ctx.fillStyle = '#ef4444';
-            ctx.fillRect(25, elevator.y, 35, 25);
-            if (elevator.cargo > 0) {
-                ctx.fillStyle = '#fbbf24'; // Gold inside
-                ctx.beginPath(); ctx.arc(42, elevator.y + 12, 5, 0, Math.PI * 2); ctx.fill();
-            }
+            // Draw Elevator Car
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(22, elevator.y, 31, 22);
 
             // --- WAREHOUSE WORKER LOGIC ---
-            warehouseWorker.x += warehouseWorker.dir * (1 + wareLvl * 0.3);
-            if (warehouseWorker.x > 200) {
+            warehouseWorker.x += warehouseWorker.dir * (1.2 + wareLvl * 0.2);
+            if (warehouseWorker.x > 180) {
                 warehouseWorker.dir = -1;
                 if (warehouseWorker.cargo > 0) {
-                    cash += warehouseWorker.cargo;
+                    cash += warehouseWorker.cargo * 1.5;
                     warehouseWorker.cargo = 0;
                     updateUI();
                 }
             }
-            if (warehouseWorker.x < 65) {
+            if (warehouseWorker.x < 55) {
                 warehouseWorker.dir = 1;
-                let take = Math.min(topStorage, wareLvl * 25);
-                topStorage -= take;
+                let take = Math.min(surfaceStorage, wareLvl * 20);
+                surfaceStorage -= take;
                 warehouseWorker.cargo += take;
             }
 
             // Draw Warehouse Worker
             ctx.fillStyle = '#10b981';
-            ctx.fillRect(warehouseWorker.x - 5, 95, 10, 15);
+            ctx.fillRect(warehouseWorker.x - 4, 75, 8, 14);
 
-            // Shaft Gold Display
+            // Display Resources on Screen
             ctx.fillStyle = '#fbbf24';
-            ctx.font = 'bold 12px sans-serif';
-            ctx.fillText('📦 ' + Math.floor(shaftStorage), 70, 210);
-            ctx.fillText('💰 Top: ' + Math.floor(topStorage), 70, 75);
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText('📦 ' + Math.floor(shaftStorage), 60, 232);
+            ctx.fillText('💰 ' + Math.floor(surfaceStorage), 60, 55);
         }
 
         requestAnimationFrame(gameLoop);
