@@ -2,254 +2,109 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Idle Miner Tycoon - Complete Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idle Miner Tycoon</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #0f172a; color: #fff; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-
-        /* Top Bar */
-        #game-header { background: #1e293b; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #3b82f6; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 10; }
-        .stat-group { display: flex; gap: 10px; }
-        .stat-box { background: rgba(0,0,0,0.4); padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; border: 1px solid #3b82f6; display: flex; align-items: center; gap: 6px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #0f172a; color: #fff; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         
-        #view-toggle { background: #f59e0b; color: #000; border: none; padding: 8px 14px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        #view-toggle:active { transform: scale(0.95); }
+        h1 { color: #38bdf8; margin-bottom: 10px; font-size: 22px; }
+        
+        .stats-card { background: #1e293b; border: 2px solid #3b82f6; border-radius: 12px; padding: 15px; width: 100%; max-width: 400px; text-align: center; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .stats-card h2 { font-size: 26px; color: #fbbf24; margin-top: 5px; }
 
-        /* Main Viewport & Canvas */
-        #main-viewport { flex: 1; position: relative; overflow: hidden; background: #38bdf8; }
-        canvas { display: block; width: 100%; height: 100%; }
-
-        /* World Map Screen Overlay */
-        #map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: none; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 30px; z-index: 5; overflow-y: auto; }
-        .map-grid { display: grid; grid-template-columns: 1fr; gap: 15px; padding: 15px; width: 100%; max-width: 400px; }
-        .island-card { background: #1e293b; border: 2px solid #38bdf8; border-radius: 15px; padding: 15px; text-align: center; cursor: pointer; transition: 0.3s; }
-        .island-card:hover { transform: translateY(-3px); background: #334155; }
-        .island-card.locked { opacity: 0.6; border-color: #64748b; }
-
-        /* Bottom Controls & Upgrades Panel */
-        #controls-panel { background: #1e293b; padding: 12px; display: flex; gap: 8px; overflow-x: auto; z-index: 10; border-top: 2px solid #3b82f6; }
-        .btn-upgrade { background: #10b981; color: white; border: none; padding: 10px 12px; border-radius: 10px; font-weight: bold; cursor: pointer; flex: 1; min-width: 105px; text-align: center; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-        .btn-upgrade:active { transform: scale(0.96); }
-        .btn-upgrade small { font-size: 10px; opacity: 0.9; }
+        .upgrades-container { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; }
+        
+        .upgrade-btn { background: #10b981; color: white; border: none; padding: 12px 15px; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
+        .upgrade-btn:active { transform: scale(0.97); }
+        .upgrade-btn:disabled { background: #475569; cursor: not-allowed; opacity: 0.7; }
+        
+        .info-text { font-size: 12px; color: #cbd5e1; margin-top: 15px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <!-- Header Stats -->
-    <div id="game-header">
-        <div class="stat-group">
-            <div class="stat-box">💰 <span id="cash-txt">150</span></div>
-            <div class="stat-box">💎 <span id="gem-txt">10</span></div>
-        </div>
-        <button id="view-toggle" onclick="toggleView()">🗺️ World Map</button>
+    <h1>⛏️ Idle Miner Tycoon</h1>
+
+    <div class="stats-card">
+        <p>Total Cash</p>
+        <h2 id="cash-display">💰 0</h2>
+        <p style="font-size: 13px; color: #34d399; margin-top: 8px;" id="income-display">Income: +1 $/sec</p>
     </div>
 
-    <!-- Main Viewport -->
-    <div id="main-viewport">
-        <canvas id="gameCanvas"></canvas>
+    <div class="upgrades-container">
+        <button class="upgrade-btn" onclick="buyUpgrade('miner')">
+            <span>👷 Hire Miner (Lvl <span id="miner-lvl">1</span>)</span>
+            <span id="miner-cost">💰 50</span>
+        </button>
 
-        <!-- World Map Overlay (Islands / Elemental view like video) -->
-        <div id="map-overlay">
-            <h2 style="margin-bottom:15px; color:#38bdf8;">🌍 Continents & Islands</h2>
-            <div class="map-grid">
-                <div class="island-card" onclick="selectIsland('Grassland')">
-                    <h3>🌱 Grassland Mine</h3>
-                    <p style="color:#4ade80; font-size:13px;">Status: Active</p>
-                </div>
-                <div class="island-card" onclick="selectIsland('Ice')">
-                    <h3>❄️ Ice Continent</h3>
-                    <p style="color:#38bdf8; font-size:13px;">Multiplier: x2.5 Cash</p>
-                </div>
-                <div class="island-card" onclick="selectIsland('Fire')">
-                    <h3>🔥 Volcanic Island</h3>
-                    <p style="color:#f59e0b; font-size:13px;">Multiplier: x5.0 Cash</p>
-                </div>
-            </div>
-        </div>
+        <button class="upgrade-btn" onclick="buyUpgrade('elevator')">
+            <span>🛗 Upgrade Elevator (Lvl <span id="ele-lvl">1</span>)</span>
+            <span id="ele-cost">💰 100</span>
+        </button>
+
+        <button class="upgrade-btn" onclick="buyUpgrade('warehouse')">
+            <span>🚚 Upgrade Warehouse (Lvl <span id="ware-lvl">1</span>)</span>
+            <span id="ware-cost">💰 200</span>
+        </button>
     </div>
 
-    <!-- Bottom Management Panel -->
-    <div id="controls-panel">
-        <button class="btn-upgrade" onclick="upgradeShaft()">⛏️ Shaft Lvl <span id="shaft-lvl">1</span><br><small>$<span id="shaft-cost">50</span></small></button>
-        <button class="btn-upgrade" onclick="upgradeElevator()">🛗 Elevator Lvl <span id="ele-lvl">1</span><br><small>$<span id="ele-cost">100</span></small></button>
-        <button class="btn-upgrade" onclick="upgradeWarehouse()">🚚 Warehouse Lvl <span id="ware-lvl">1</span><br><small>$<span id="ware-cost">150</span></small></button>
-    </div>
+    <p class="info-text">Automatic earnings will increase as you upgrade your mine components!</p>
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    let game = {
+        cash: 10,
+        minerLvl: 1,
+        minerCost: 50,
+        eleLvl: 1,
+        eleCost: 100,
+        wareLvl: 1,
+        wareCost: 200
+    };
 
-    function resize() {
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight;
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    // Game Economy & State
-    let cash = 150;
-    let gems = 10;
-    let shaftLvl = 1;
-    let eleLvl = 1;
-    let wareLvl = 1;
-    let currentView = 'mine';
-
-    // Simulation Entities
-    let miner = { x: 80, dir: 1 };
-    let elevator = { y: 120, dir: 1, cargo: 0 };
-    let warehouseWorker = { x: 50, dir: 1, cargo: 0 };
-    let shaftStorage = 0;
-    let surfaceStorage = 0;
-
-    function toggleView() {
-        const map = document.getElementById('map-overlay');
-        const btn = document.getElementById('view-toggle');
-        if (currentView === 'mine') {
-            currentView = 'map';
-            map.style.display = 'flex';
-            btn.innerText = '⛏️ Back to Mine';
-        } else {
-            currentView = 'mine';
-            map.style.display = 'none';
-            btn.innerText = '🗺️ World Map';
-        }
-    }
-
-    function selectIsland(name) {
-        alert("Switched to " + name + " Mine!");
-        toggleView();
-    }
-
-    function upgradeShaft() {
-        let cost = Math.floor(50 * Math.pow(1.4, shaftLvl - 1));
-        if (cash >= cost) {
-            cash -= cost;
-            shaftLvl++;
-            updateUI();
-        }
-    }
-
-    function upgradeElevator() {
-        let cost = Math.floor(100 * Math.pow(1.4, eleLvl - 1));
-        if (cash >= cost) {
-            cash -= cost;
-            eleLvl++;
-            updateUI();
-        }
-    }
-
-    function upgradeWarehouse() {
-        let cost = Math.floor(150 * Math.pow(1.4, wareLvl - 1));
-        if (cash >= cost) {
-            cash -= cost;
-            wareLvl++;
-            updateUI();
-        }
+    function getIncome() {
+        return game.minerLvl * game.eleLvl * game.wareLvl;
     }
 
     function updateUI() {
-        document.getElementById('cash-txt').innerText = Math.floor(cash);
-        document.getElementById('gem-txt').innerText = gems;
-        document.getElementById('shaft-lvl').innerText = shaftLvl;
-        document.getElementById('shaft-cost').innerText = Math.floor(50 * Math.pow(1.4, shaftLvl - 1));
-        document.getElementById('ele-lvl').innerText = eleLvl;
-        document.getElementById('ele-cost').innerText = Math.floor(100 * Math.pow(1.4, eleLvl - 1));
-        document.getElementById('ware-lvl').innerText = wareLvl;
-        document.getElementById('ware-cost').innerText = Math.floor(150 * Math.pow(1.4, wareLvl - 1));
+        document.getElementById('cash-display').innerText = '💰 ' + Math.floor(game.cash);
+        document.getElementById('income-display').innerText = 'Income: +' + getIncome() + ' $/sec';
+        
+        document.getElementById('miner-lvl').innerText = game.minerLvl;
+        document.getElementById('miner-cost').innerText = '💰 ' + game.minerCost;
+        
+        document.getElementById('ele-lvl').innerText = game.eleLvl;
+        document.getElementById('ele-cost').innerText = '💰 ' + game.eleCost;
+        
+        document.getElementById('ware-lvl').innerText = game.wareLvl;
+        document.getElementById('ware-cost').innerText = '💰 ' + game.wareCost;
     }
 
-    // Main Game Render & Physics Loop
-    function gameLoop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        if (currentView === 'mine') {
-            // 1. Sky & Surface Environment
-            ctx.fillStyle = '#38bdf8';
-            ctx.fillRect(0, 0, canvas.width, 100); // Sky
-            
-            ctx.fillStyle = '#22c55e';
-            ctx.fillRect(0, 90, canvas.width, 15); // Grass layer
-
-            // 2. Underground Earth
-            ctx.fillStyle = '#331a00';
-            ctx.fillRect(0, 105, canvas.width, canvas.height - 105);
-
-            // Mine Shaft Tunnel
-            ctx.fillStyle = '#1c0f02';
-            ctx.fillRect(50, 240, canvas.width - 50, 50);
-
-            // Elevator Shaft Structure
-            ctx.fillStyle = '#0f172a';
-            ctx.fillRect(25, 40, 25, canvas.height - 80);
-
-            // --- MINER MOVEMENT & LOGIC ---
-            miner.x += miner.dir * (1.2 + shaftLvl * 0.15);
-            if (miner.x > canvas.width - 60) {
-                miner.dir = -1;
-                shaftStorage += shaftLvl * 8;
-            }
-            if (miner.x < 60) {
-                miner.dir = 1;
-            }
-
-            // Draw Cartoon Miner Character
-            ctx.fillStyle = '#eab308'; // Helmet
-            ctx.beginPath(); ctx.arc(miner.x, 255, 7, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#ef4444'; // Shirt
-            ctx.fillRect(miner.x - 4, 262, 8, 12);
-
-            // --- ELEVATOR MOVEMENT & LOGIC ---
-            elevator.y += elevator.dir * (1.2 + eleLvl * 0.2);
-            if (elevator.y > 245) {
-                elevator.dir = -1;
-                let take = Math.min(shaftStorage, eleLvl * 15);
-                shaftStorage -= take;
-                elevator.cargo += take;
-            }
-            if (elevator.y < 60) {
-                elevator.dir = 1;
-                surfaceStorage += elevator.cargo;
-                elevator.cargo = 0;
-            }
-
-            // Draw Elevator Car
-            ctx.fillStyle = '#3b82f6';
-            ctx.fillRect(22, elevator.y, 31, 22);
-
-            // --- WAREHOUSE WORKER LOGIC ---
-            warehouseWorker.x += warehouseWorker.dir * (1.2 + wareLvl * 0.2);
-            if (warehouseWorker.x > 180) {
-                warehouseWorker.dir = -1;
-                if (warehouseWorker.cargo > 0) {
-                    cash += warehouseWorker.cargo * 1.5;
-                    warehouseWorker.cargo = 0;
-                    updateUI();
-                }
-            }
-            if (warehouseWorker.x < 55) {
-                warehouseWorker.dir = 1;
-                let take = Math.min(surfaceStorage, wareLvl * 20);
-                surfaceStorage -= take;
-                warehouseWorker.cargo += take;
-            }
-
-            // Draw Warehouse Worker
-            ctx.fillStyle = '#10b981';
-            ctx.fillRect(warehouseWorker.x - 4, 75, 8, 14);
-
-            // Display Resources on Screen
-            ctx.fillStyle = '#fbbf24';
-            ctx.font = 'bold 11px sans-serif';
-            ctx.fillText('📦 ' + Math.floor(shaftStorage), 60, 232);
-            ctx.fillText('💰 ' + Math.floor(surfaceStorage), 60, 55);
+    function buyUpgrade(type) {
+        if (type === 'miner' && game.cash >= game.minerCost) {
+            game.cash -= game.minerCost;
+            game.minerLvl++;
+            game.minerCost = Math.floor(game.minerCost * 1.5);
+        } else if (type === 'elevator' && game.cash >= game.eleCost) {
+            game.cash -= game.eleCost;
+            game.eleLvl++;
+            game.eleCost = Math.floor(game.eleCost * 1.5);
+        } else if (type === 'warehouse' && game.cash >= game.wareCost) {
+            game.cash -= game.wareCost;
+            game.wareLvl++;
+            game.wareCost = Math.floor(game.wareCost * 1.5);
         }
-
-        requestAnimationFrame(gameLoop);
+        updateUI();
     }
+
+    // Game loop (Earns cash every second)
+    setInterval(function() {
+        game.cash += getIncome();
+        updateUI();
+    }, 1000);
 
     updateUI();
-    gameLoop();
 </script>
+
 </body>
 </html>
